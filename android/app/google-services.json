@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "427740647668",
+    "project_id": "cabsapp-52a05",
+    "storage_bucket": "cabsapp-52a05.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:427740647668:android:9ae62b1767723a6f070ea1",
+        "android_client_info": {
+          "package_name": "com.example.cabsapp"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyB5glhTa8Y2pnIKcBulff2Cng9f1XaXwvM"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
