@@ -8,7 +8,7 @@ class OtpScreen extends StatefulWidget {
   final String phone;
   final String role;
 
-  OtpScreen({required this.phone, required this.role});
+  const OtpScreen({super.key, required this.phone, required this.role});
 
   @override
   _OtpScreenState createState() => _OtpScreenState();
@@ -17,6 +17,7 @@ class OtpScreen extends StatefulWidget {
 class _OtpScreenState extends State<OtpScreen> {
   final otpController = TextEditingController();
   String verificationId = '';
+  bool isLoading = false;
 
   @override
   void initState() {
@@ -32,6 +33,9 @@ class _OtpScreenState extends State<OtpScreen> {
       },
       verificationFailed: (e) {
         print('Failed: $e');
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('OTP sending failed. Please try again.')),
+        );
       },
       codeSent: (verId, _) {
         setState(() {
@@ -43,33 +47,47 @@ class _OtpScreenState extends State<OtpScreen> {
   }
 
   void verifyOtp() async {
-    PhoneAuthCredential credential = PhoneAuthProvider.credential(
-      verificationId: verificationId,
-      smsCode: otpController.text.trim(),
-    );
-
-    UserCredential userCred =
-        await FirebaseAuth.instance.signInWithCredential(credential);
-
-    // Store role in Firestore
-    await FirebaseFirestore.instance
-        .collection('users')
-        .doc(userCred.user!.uid)
-        .set({
-      'phone': widget.phone,
-      'role': widget.role,
+    setState(() {
+      isLoading = true;
     });
 
-    if (widget.role == 'driver') {
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (_) => DriverHome()),
+    try {
+      PhoneAuthCredential credential = PhoneAuthProvider.credential(
+        verificationId: verificationId,
+        smsCode: otpController.text.trim(),
       );
-    } else {
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (_) => CustomerHome()),
+
+      UserCredential userCred =
+      await FirebaseAuth.instance.signInWithCredential(credential);
+
+      await FirebaseFirestore.instance
+          .collection('users')
+          .doc(userCred.user!.uid)
+          .set({
+        'phone': widget.phone,
+        'role': widget.role,
+      }, SetOptions(merge: true));
+
+      if (widget.role == 'driver') {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (_) => DriverHome()),
+        );
+      } else {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (_) => CustomerHome()),
+        );
+      }
+    } catch (e) {
+      print('OTP verification error: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('OTP verification failed. Please try again.')),
       );
+    } finally {
+      setState(() {
+        isLoading = false;
+      });
     }
   }
 
@@ -87,10 +105,12 @@ class _OtpScreenState extends State<OtpScreen> {
               decoration: InputDecoration(labelText: 'OTP'),
             ),
             SizedBox(height: 20),
-            ElevatedButton(
-              onPressed: verifyOtp,
+            isLoading
+                ? CircularProgressIndicator()
+                : ElevatedButton(
+              onPressed: verificationId.isEmpty ? null : verifyOtp,
               child: Text('Verify & Continue'),
-            )
+            ),
           ],
         ),
       ),
